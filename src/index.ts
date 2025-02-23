@@ -1,16 +1,17 @@
 import {
+	AuthorizationHeader,
+	Extension,
+	Extensions,
 	IssuerConfig,
 	PRIVATE_TOKEN_ISSUER_DIRECTORY,
-	PrivateToken,
 	TOKEN_TYPES,
-	Token,
-	TokenChallenge,
+	WWWAuthenticateHeader,
+	publicVerif,
 	util,
 } from '@cloudflare/privacypass-ts';
-import { base64UrlToUint8Array, verifyToken } from './redemption.js';
+const { BlindRSAMode, Origin } = publicVerif;
+import { b64ToB64URL, b64Tou8, b64URLtoB64, u8ToB64 } from './base64.js';
 
-import originHTML from './origin-html.js';
-import tokenOKHTML from './origin-html-to-remove-token-ok.js';
 import { Bindings } from './bindings.js';
 
 export default {
@@ -55,7 +56,7 @@ async function fetchBasicIssuerKeys(env: Bindings, issuerURL: string) {
 		throw new Error('Could not find BlindRSA token key on issuer');
 	}
 
-	const clientRequestKeyEnc = base64UrlToUint8Array(token['token-key']);
+	const clientRequestKeyEnc = b64Tou8(b64URLtoB64(token['token-key']));
 
 	return clientRequestKeyEnc;
 }
@@ -81,7 +82,7 @@ async function issuerKeys(env: Bindings): Promise<[CryptoKey, Uint8Array]> {
 
 async function handleLogin(request: Request, env: Bindings) {
 	const tokenType = TOKEN_TYPES.BLIND_RSA;
-	let tokenKey, clientRequestKeyEnc;
+	let tokenKey: CryptoKey, clientRequestKeyEnc: Uint8Array;
 	try {
 		[tokenKey, clientRequestKeyEnc] = await issuerKeys(env);
 	} catch (err) {
@@ -91,22 +92,24 @@ async function handleLogin(request: Request, env: Bindings) {
 	const fixedRedemptionContext = new Uint8Array(32);
 	fixedRedemptionContext.fill(0xfe);
 	const issuerName = new URL(env.ISSUER_URL).host;
-	const challenge = new TokenChallenge(tokenType.value, issuerName, fixedRedemptionContext, [
-		env.ORIGIN_NAME,
-	]);
-	const privateToken = new PrivateToken(challenge, clientRequestKeyEnc, 10);
+
+	// we are using privacy pass extension to communicate the public metadata we expect the client to use
+	// In this case, the price
+	const PRICE_EXTENSION_TYPE = 0x401d;
+	const extensions = new Extensions([new Extension(PRICE_EXTENSION_TYPE, new Uint8Array([100]))]);
+	const origin = new Origin(BlindRSAMode.PSS, [env.ORIGIN_NAME]);
+	const challenge = origin.createTokenChallenge(issuerName, fixedRedemptionContext);
+
+	const wwwauth = new WWWAuthenticateHeader(challenge, clientRequestKeyEnc /* no-max-age */);
 
 	// If the request is for the /login resource, check to see if the request
 	// has the WWW-Authenticate header carrying a token.
 	const authenticator = request.headers.get('Authorization') ?? '';
 	if (authenticator.startsWith('PrivateToken token=')) {
-		const tokenChallenge = challenge.serialize();
-		const context = new Uint8Array(await crypto.subtle.digest('SHA-256', tokenChallenge));
-		const token = Token.parse(tokenType, authenticator)[0];
-		token.verify(tokenKey);
-		const valid = await verifyToken(authenticator, tokenKey, context);
+		const token = AuthorizationHeader.parse(tokenType, authenticator)[0].token;
+		const valid = await origin.verify(token, tokenKey);
 		if (valid) {
-			return new Response(tokenOKHTML(env), {
+			return new Response('You got through. Here is a croissant 🥐', {
 				headers: {
 					'content-type': 'text/html;charset=UTF-8',
 				},
@@ -121,12 +124,13 @@ async function handleLogin(request: Request, env: Bindings) {
 		});
 	}
 
-	return new Response(originHTML(env), {
+	return new Response('Please authenticate', {
 		headers: {
 			'content-type': 'text/html;charset=UTF-8',
-			'WWW-Authenticate': privateToken.toString(),
+			'WWW-Authenticate': wwwauth.toString(),
+			'PrivacyPass-Extensions': b64ToB64URL(u8ToB64(extensions.serialize())),
 		},
-		status: 401,
+		status: 403,
 	});
 }
 
@@ -135,17 +139,5 @@ async function handleLogin(request: Request, env: Bindings) {
  * @param {Request} request
  */
 async function handleRequest(request: Request, env: Bindings) {
-	// If the request is for the home page, return the basic interaction form.
-	const url = new URL(request.url);
-
-	if (url.pathname.startsWith('/login')) {
-		return handleLogin(request, env);
-	}
-
-	return new Response('Unsupported resource', {
-		headers: {
-			'content-type': 'text/html;charset=UTF-8',
-		},
-		status: 400,
-	});
+	return handleLogin(request, env);
 }
