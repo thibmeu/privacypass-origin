@@ -46,7 +46,7 @@
 		"wrangler": "4.59.1"
 	},
 	"dependencies": {
-		"@cloudflare/privacypass-ts": "^0.4.0",
+		"@cloudflare/privacypass-ts": "file:../act-ts/packages/privacypass-ts",
 		"@sentry/cli": "^2.20.6",
 		"typescript": "^5.2.2"
 	}
