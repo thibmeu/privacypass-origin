@@ -18,3 +18,18 @@ route = { pattern = "pp-origin.example.test", custom_domain=true }
 [env.production.vars]
 ISSUER_URL = "https://pp-issuer-public.research.cloudflare.com" # Use Cloudflare Research Public Issuer. This is only meant for experiments, AND SHOULD NOT BE USED ON A PRODUCTION SERVICE
 ORIGIN_NAME = "pp-origin.example.test"
+
+# ACT Origin Environment
+[env.act]
+name = "act-origin"
+route = { pattern = "act-origin.research.cloudflare.com", custom_domain = true }
+services = [
+  { binding = "ACT_ISSUER", service = "act-issuer", environment = "act" }
+]
+
+[env.act.vars]
+ISSUER_URL = "https://act-issuer.research.cloudflare.com"
+ORIGIN_NAME = "act-origin.research.cloudflare.com"
+ACT_DOMAIN_SEPARATOR = "ACT-v1"
+ACT_L = "16"
+ACT_RETURN_CREDITS = "1"

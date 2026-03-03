@@ -17,9 +17,7 @@ export interface Bindings {
 	// ACT configuration
 	ACT_DOMAIN_SEPARATOR: string;
 	ACT_L: string;
-	ACT_INITIAL_CREDITS: string;
-	ACT_REQUEST_COST: string;
-	ACT_RETURN_CREDITS: string;
+	ACT_RETURN_CREDITS: string; // Credits to return in refund
 
 	// Service Bindings
 	ISSUER: Fetcher;
