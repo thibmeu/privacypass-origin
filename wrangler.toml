@@ -33,3 +33,14 @@ ORIGIN_NAME = "act-origin.research.cloudflare.com"
 ACT_DOMAIN_SEPARATOR = "ACT-v1"
 ACT_L = "16"
 ACT_RETURN_CREDITS = "1"
+
+# Local development
+[env.dev]
+name = "act-origin-dev"
+
+[env.dev.vars]
+ISSUER_URL = "http://localhost:8787"
+ORIGIN_NAME = "localhost:8788"
+ACT_DOMAIN_SEPARATOR = "act-issuer.research.cloudflare.com"
+ACT_L = "8"
+ACT_RETURN_CREDITS = "1"
