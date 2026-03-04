@@ -84,7 +84,7 @@ footer { border-top: 1px solid #ccc; padding: 1rem 3rem; margin-top: 3rem; }
     <h2>Quick Start</h2>
     <p>Use <a href="https://github.com/thibmeu/act-rs">act</a> to manage credentials:</p>
     <pre><code># Install act
-cargo install --git https://github.com/thibmeu/act-rs act
+cargo install --git https://github.com/thibmeu/act-rs
 
 # Enroll a credential with 100 credits
 act login ${env.ISSUER_URL}

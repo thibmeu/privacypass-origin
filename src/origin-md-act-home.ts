@@ -31,7 +31,7 @@ Use [act](https://github.com/thibmeu/act-rs) to manage credentials:
 
 \`\`\`bash
 # Install act
-cargo install --git https://github.com/thibmeu/act-rs act
+cargo install --git https://github.com/thibmeu/act-rs
 
 # Enroll a credential with 100 credits
 act login ${env.ISSUER_URL}

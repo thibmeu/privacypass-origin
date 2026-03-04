@@ -23,7 +23,7 @@ Plugin: [github.com/thibmeu/act-ts/.opencode/plugins](https://github.com/thibmeu
 
 ## Option 2: act CLI (manual)
 
-1. Install: \`cargo install --git https://github.com/thibmeu/act-rs act\`
+1. Install: \`cargo install --git https://github.com/thibmeu/act-rs\`
 2. Enroll: \`act login ${env.ISSUER_URL}\`
 3. Request: \`act redeem https://${env.ORIGIN_NAME}/act-login\`
 
