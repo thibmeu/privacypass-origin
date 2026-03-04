@@ -24,8 +24,19 @@ type ContentFormat = 'html' | 'markdown';
 /** Parse Accept header and return preferred content format */
 function getContentFormat(request: Request): ContentFormat {
 	const accept = request.headers.get('Accept') ?? '';
-	// Simple prefix matching - check for markdown/plain before html
-	if (accept.includes('text/markdown') || accept.includes('text/plain')) {
+	// Only return Markdown if explicitly requested as primary type
+	// text/markdown must appear before text/html or */*
+	// This ensures browsers (which send text/html,*/*) get HTML
+	if (accept.startsWith('text/markdown') || accept.startsWith('text/plain')) {
+		return 'markdown';
+	}
+	// Check if markdown is preferred over html (appears before text/html)
+	const markdownPos = Math.min(
+		accept.indexOf('text/markdown') >= 0 ? accept.indexOf('text/markdown') : Infinity,
+		accept.indexOf('text/plain') >= 0 ? accept.indexOf('text/plain') : Infinity
+	);
+	const htmlPos = accept.indexOf('text/html') >= 0 ? accept.indexOf('text/html') : Infinity;
+	if (markdownPos < htmlPos && markdownPos !== Infinity) {
 		return 'markdown';
 	}
 	return 'html';

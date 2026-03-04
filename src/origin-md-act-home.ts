@@ -2,42 +2,42 @@ import { Bindings } from './bindings';
 
 export default (env: Bindings) => `# Anonymous Credit Tokens Demo
 
-Privacy-preserving pre-paid credits with unlinkable spending and cryptographic refunds.
+Privacy-preserving credentials with unlinkable redemptions.
 
 ## What is ACT?
 
-ACT (Anonymous Credit Tokens) lets you issue pre-paid credits that users can spend privately.
-The issuer learns nothing about which user made a purchase or how purchases relate to each other.
+ACT is a keyed-verification anonymous credential scheme. Credentials carry an integer balance
+that decreases on each use. Redemptions are unlinkable to issuance and to each other.
 
 ### Security Properties
 
 | Property | Description |
 |----------|-------------|
-| **Unlinkability** | Spends cannot be linked to issuance or each other |
-| **Balance Privacy** | Only spend amount revealed, not total balance |
-| **Double-spend Prevention** | Cryptographic nullifiers ensure one-time use |
-| **Unforgeability** | Cannot spend more credits than issued |
+| **Unlinkability** | Redemptions cannot be linked to issuance or to each other |
+| **Balance Privacy** | Only redemption amount revealed, not total balance |
+| **One-show** | Cryptographic nullifiers prevent double-spending |
+| **Unforgeability** | Cannot redeem more than issued |
 
 ## How It Works
 
-ACT uses a two-step flow: **issue** and **spend (with change)**.
+Two-phase protocol: **issuance** and **redemption**.
 
-1. **Issue:** Client requests credits from issuer, receives a credential
-2. **Spend:** Client proves balance ≥ cost, receives refund credential for remaining balance
+1. **Issuance:** Client blinds a commitment, issuer signs, client unblinds to get credential
+2. **Redemption:** Client proves balance ≥ cost via range proof, issuer returns updated credential
 
 ## Quick Start
 
-Use [act-cli](https://github.com/thibmeu/act-rs) to manage credentials:
+Use [act](https://github.com/thibmeu/act-rs) to manage credentials:
 
 \`\`\`bash
-# Install act-cli
-cargo install --git https://github.com/thibmeu/act-rs act-cli
+# Install act
+cargo install --git https://github.com/thibmeu/act-rs act
 
-# Issue a credential with 10 credits
-act-cli issue --issuer ${env.ISSUER_URL} --credits 10
+# Enroll a credential with 100 credits
+act login ${env.ISSUER_URL}
 
-# Spend 1 credit on a request
-act-cli request ${env.ORIGIN_NAME}/act-login
+# Make an authenticated request
+act redeem https://${env.ORIGIN_NAME}/act-login
 \`\`\`
 
 ## Demo Parameters

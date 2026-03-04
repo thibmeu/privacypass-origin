@@ -41,12 +41,12 @@ header {
 }
 header p { text-align: center; font-size: 1.8rem; max-width: 700px; margin: 0 auto; padding-top: 1rem; }
 section { position: relative; margin: 20px 0; padding: 0 20px; }
-section > * { max-width: 800px; margin: 0 auto; }
-table { width: 100%; margin: 1rem 0; border-collapse: collapse; }
+section > * { max-width: 800px; margin-left: auto; margin-right: auto; }
+table { width: 100%; margin-top: 1rem; margin-bottom: 1rem; border-collapse: collapse; }
 table th, table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
 table th { font-weight: 600; background: #f9f9f9; }
-.highlight { background: #fff3cd; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
-ul { margin: 0.5rem 0 1rem 2rem; }
+.highlight { background: #fff3cd; padding: 1rem; border-radius: 6px; margin-top: 1rem; margin-bottom: 1rem; }
+ul, ol { margin-top: 0.5rem; margin-bottom: 1rem; padding-left: 2rem; }
 li { margin-bottom: 0.5rem; }
 footer { border-top: 1px solid #ccc; padding: 1rem 3rem; margin-top: 3rem; }
 .text-muted { font-size: 13px; color: #888; }
@@ -55,42 +55,42 @@ footer { border-top: 1px solid #ccc; padding: 1rem 3rem; margin-top: 3rem; }
 <body>
   <header>
     <h1>Anonymous Credit Tokens</h1>
-    <p>Privacy-preserving pre-paid credits with unlinkable spending and cryptographic refunds</p>
+    <p>Privacy-preserving credentials with unlinkable redemptions</p>
   </header>
 
   <section>
     <h2>What is ACT?</h2>
     <p>
-      ACT (Anonymous Credit Tokens) lets you issue pre-paid credits that users can spend privately.
-      The issuer learns nothing about which user made a purchase or how purchases relate to each other.
+      ACT is a keyed-verification anonymous credential scheme. Credentials carry an integer balance
+      that decreases on each use. Redemptions are unlinkable to issuance and to each other.
     </p>
     <div class="highlight">
       <strong>Security Properties:</strong>
       <ul>
-        <li><strong>Unlinkability</strong> - Spends cannot be linked to issuance or each other</li>
-        <li><strong>Balance Privacy</strong> - Only spend amount revealed, not total balance</li>
-        <li><strong>Double-spend Prevention</strong> - Cryptographic nullifiers ensure one-time use</li>
-        <li><strong>Unforgeability</strong> - Cannot spend more credits than issued</li>
+        <li><strong>Unlinkability</strong> - Redemptions cannot be linked to issuance or to each other</li>
+        <li><strong>Balance Privacy</strong> - Only redemption amount revealed, not total balance</li>
+        <li><strong>One-show</strong> - Cryptographic nullifiers prevent double-spending</li>
+        <li><strong>Unforgeability</strong> - Cannot redeem more than issued</li>
       </ul>
     </div>
 
     <h2>How It Works</h2>
-    <p>ACT uses a two-step flow: <strong>issue</strong> and <strong>spend (with change)</strong>.</p>
+    <p>Two-phase protocol: <strong>issuance</strong> and <strong>redemption</strong>.</p>
     <ol>
-      <li><strong>Issue:</strong> Client requests credits from issuer, receives a credential</li>
-      <li><strong>Spend:</strong> Client proves balance ≥ cost, receives refund credential for remaining balance</li>
+      <li><strong>Issuance:</strong> Client blinds a commitment, issuer signs, client unblinds to get credential</li>
+      <li><strong>Redemption:</strong> Client proves balance ≥ cost via range proof, issuer returns updated credential</li>
     </ol>
 
     <h2>Quick Start</h2>
-    <p>Use <a href="https://github.com/thibmeu/act-rs">act-cli</a> to manage credentials:</p>
-    <pre><code># Install act-cli
-cargo install --git https://github.com/thibmeu/act-rs act-cli
+    <p>Use <a href="https://github.com/thibmeu/act-rs">act</a> to manage credentials:</p>
+    <pre><code># Install act
+cargo install --git https://github.com/thibmeu/act-rs act
 
-# Issue a credential with 10 credits
-act-cli issue --issuer ${env.ISSUER_URL} --credits 10
+# Enroll a credential with 100 credits
+act login ${env.ISSUER_URL}
 
-# Spend 1 credit on a request
-act-cli request ${env.ORIGIN_NAME}/act-login</code></pre>
+# Make an authenticated request
+act redeem https://${env.ORIGIN_NAME}/act-login</code></pre>
 
     <h2>Demo Parameters</h2>
     <table>
