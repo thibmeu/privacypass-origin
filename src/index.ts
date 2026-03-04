@@ -164,9 +164,15 @@ async function handleACTLogin(request: Request, env: Bindings) {
 	}
 
 	// Create ACT origin
-	const domainSeparator = new TextEncoder().encode(env.ACT_DOMAIN_SEPARATOR);
+	// Domain separator follows spec format: ACT-v1:organization:service:deployment:version
+	const rawDomainSeparator = env.ACT_DOMAIN_SEPARATOR;
+	const structuredSeparator = rawDomainSeparator.startsWith('ACT-v1:')
+		? rawDomainSeparator
+		: `ACT-v1:${rawDomainSeparator}`;
+	const domainSeparator = new TextEncoder().encode(structuredSeparator);
 	const L = parseInt(env.ACT_L);
-	const origin = ACTOrigin.create(domainSeparator, L, issuerPkBytes, [env.ORIGIN_NAME]);
+	const issuerName = new URL(env.ISSUER_URL).host;
+	const origin = ACTOrigin.create(domainSeparator, L, issuerPkBytes, [env.ORIGIN_NAME], issuerName);
 
 	// Create challenge
 	const credentialContext = crypto.getRandomValues(new Uint8Array(32));
@@ -185,6 +191,8 @@ async function handleACTLogin(request: Request, env: Bindings) {
 			// Decode token structure (verification requires issuer private key)
 			const decoded = origin.decodeToken(token);
 			if (!decoded.valid) {
+				console.log('Token issuerKeyId:', uint8ToBase64(token.issuerKeyId));
+				console.log('Origin issuerKeyId:', uint8ToBase64(origin.issuerKeyId));
 				return new Response('Invalid ACT token: issuer key ID mismatch', { status: 401 });
 			}
 
@@ -193,16 +201,40 @@ async function handleACTLogin(request: Request, env: Bindings) {
 
 			// Forward spend proof to issuer for verification
 			const returnCredits = BigInt(env.ACT_RETURN_CREDITS);
-			const verifyResult = await env.ACT_ISSUER.actVerifySpend({
-				keyID,
-				proofBytes: token.spendProof,
-				returnCredits,
-				serviceInfo: {
-					url: env.ISSUER_URL,
-					route: '/act-verify-spend',
-					service: 'act-issuer',
-				},
-			});
+			let verifyResult: { valid: boolean; refund?: Uint8Array };
+
+			if (env.ACT_ISSUER) {
+				// Use service binding (production)
+				verifyResult = await env.ACT_ISSUER.actVerifySpend({
+					keyID,
+					proofBytes: token.spendProof,
+					returnCredits,
+					serviceInfo: {
+						url: env.ISSUER_URL,
+						route: '/act-verify-spend',
+						service: 'act-issuer',
+					},
+				});
+			} else {
+				// Fall back to HTTP call (dev mode)
+				const verifyResponse = await fetch(`${env.ISSUER_URL}/act-verify-spend`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						keyID,
+						proofBytes: Array.from(token.spendProof),
+						returnCredits: returnCredits.toString(),
+					}),
+				});
+				if (!verifyResponse.ok) {
+					return new Response('ACT spend proof verification failed (issuer error)', { status: 401 });
+				}
+				const verifyJson = await verifyResponse.json() as { valid: boolean; refund?: number[] };
+				verifyResult = {
+					valid: verifyJson.valid,
+					refund: verifyJson.refund ? new Uint8Array(verifyJson.refund) : undefined,
+				};
+			}
 
 			if (!verifyResult.valid) {
 				return new Response('ACT spend proof verification failed', { status: 401 });
@@ -254,6 +286,12 @@ function uint8ToBase64Url(bytes: Uint8Array): string {
 	const binary = String.fromCharCode(...bytes);
 	const base64 = btoa(binary);
 	return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Helper: convert Uint8Array to base64
+function uint8ToBase64(bytes: Uint8Array): string {
+	const binary = String.fromCharCode(...bytes);
+	return btoa(binary);
 }
 
 /**
