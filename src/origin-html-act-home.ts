@@ -95,7 +95,9 @@ act redeem https://${env.ORIGIN_NAME}/act-login</code></pre>
     <h2>Demo Parameters</h2>
     <table>
       <tr><th>Parameter</th><th>Value</th><th>Description</th></tr>
-      <tr><td>L</td><td>${env.ACT_L}</td><td>Credit bit length (max balance: ${Math.pow(2, parseInt(env.ACT_L)) - 1})</td></tr>
+      <tr><td>L</td><td>${env.ACT_L}</td><td>Credit bit length (max balance: ${
+				Math.pow(2, parseInt(env.ACT_L)) - 1
+			})</td></tr>
       <tr><td>Spend Amount</td><td>1</td><td>Fixed cost per request</td></tr>
       <tr><td>Issuer</td><td><code>${env.ISSUER_URL}</code></td><td>ACT credential issuer</td></tr>
       <tr><td>Origin</td><td><code>${env.ORIGIN_NAME}</code></td><td>This demo origin</td></tr>
@@ -107,7 +109,9 @@ act redeem https://${env.ORIGIN_NAME}/act-login</code></pre>
       <tr><td><code>/</code></td><td>This page (HTML or Markdown based on Accept header)</td></tr>
       <tr><td><code>/act-login</code></td><td>ACT-protected endpoint - requires valid token</td></tr>
       <tr><td><code>/debug</code></td><td>Returns request headers as JSON (for troubleshooting)</td></tr>
-      <tr><td><a href="${env.ISSUER_URL}/.well-known/private-token-issuer-directory">Issuer Directory</a></td><td>Issuer public keys and configuration</td></tr>
+      <tr><td><a href="${
+				env.ISSUER_URL
+			}/.well-known/private-token-issuer-directory">Issuer Directory</a></td><td>Issuer public keys and configuration</td></tr>
     </table>
 
     <h2>Error Responses</h2>

@@ -3,7 +3,6 @@ import {
 	PRIVATE_TOKEN_ISSUER_DIRECTORY,
 	WWWAuthenticateHeader,
 	TOKEN_TYPES,
-	Token,
 	TokenChallenge,
 	util,
 	act,
@@ -13,7 +12,9 @@ import { base64UrlToUint8Array, verifyToken } from './redemption.js';
 import originHTML from './origin-html.js';
 import tokenOKHTML from './origin-html-to-remove-token-ok.js';
 import actOriginHTML from './origin-html-act.js';
+import actOriginMD from './origin-md-act.js';
 import actTokenOKHTML from './origin-html-act-ok.js';
+import actTokenOKMD from './origin-md-act-ok.js';
 import actHomeHTML from './origin-html-act-home.js';
 import actHomeMD from './origin-md-act-home.js';
 import { Bindings } from './bindings.js';
@@ -42,7 +43,7 @@ function getContentFormat(request: Request): ContentFormat {
 	return 'html';
 }
 
-const { ACTTokenChallenge, ACTToken, ACT_TOKEN_TYPE, Origin: ACTOrigin, ACT } = act;
+const { ACTToken, ACT_TOKEN_TYPE, Origin: ACTOrigin } = act;
 
 export default {
 	async fetch(request: Request, env: Bindings) {
@@ -268,9 +269,26 @@ async function handleACTLogin(request: Request, env: Bindings) {
 				return new Response('ACT spend proof verification failed', { status: 401 });
 			}
 
+			// Build response based on content negotiation
+			const format = getContentFormat(request);
+			const contentType =
+				format === 'markdown' ? 'text/markdown;charset=UTF-8' : 'text/html;charset=UTF-8';
+			const responseBody =
+				format === 'markdown'
+					? actTokenOKMD({
+							env,
+							remainingBalance: 0n, // We don't know actual balance
+							hasRefund: !!verifyResult.refund,
+					  })
+					: actTokenOKHTML({
+							env,
+							remainingBalance: 0n, // We don't know actual balance
+							hasRefund: !!verifyResult.refund,
+					  });
+
 			// Build response headers
 			const responseHeaders: Record<string, string> = {
-				'Content-Type': 'text/html;charset=UTF-8',
+				'Content-Type': contentType,
 			};
 
 			// Include refund in PrivacyPass-Reverse header (draft-meunier-privacypass-reverse-flow-03 §6)
@@ -279,17 +297,10 @@ async function handleACTLogin(request: Request, env: Bindings) {
 				responseHeaders['PrivacyPass-Reverse'] = refundB64;
 			}
 
-			return new Response(
-				actTokenOKHTML({
-					env,
-					remainingBalance: 0n, // We don't know actual balance
-					hasRefund: !!verifyResult.refund,
-				}),
-				{
-					status: 200,
-					headers: responseHeaders,
-				}
-			);
+			return new Response(responseBody, {
+				status: 200,
+				headers: responseHeaders,
+			});
 		} catch (err) {
 			return new Response('ACT token processing failed: ' + err, { status: 400 });
 		}
@@ -300,9 +311,15 @@ async function handleACTLogin(request: Request, env: Bindings) {
 	// Note: ACT uses a different challenge format than Blind RSA
 	const wwwAuth = new WWWAuthenticateHeader(challenge, issuerPkBytes);
 
-	return new Response(actOriginHTML(env), {
+	// Content negotiation for 401 response
+	const format = getContentFormat(request);
+	const contentType =
+		format === 'markdown' ? 'text/markdown;charset=UTF-8' : 'text/html;charset=UTF-8';
+	const responseBody = format === 'markdown' ? actOriginMD(env) : actOriginHTML(env);
+
+	return new Response(responseBody, {
 		headers: {
-			'Content-Type': 'text/html;charset=UTF-8',
+			'Content-Type': contentType,
 			'WWW-Authenticate': wwwAuth.toString(),
 		},
 		status: 401,

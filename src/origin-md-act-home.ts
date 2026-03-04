@@ -56,7 +56,9 @@ act redeem https://${env.ORIGIN_NAME}/act-login
 | \`/\` | This page (HTML or Markdown based on Accept header) |
 | \`/act-login\` | ACT-protected endpoint - requires valid token |
 | \`/debug\` | Returns request headers as JSON (for troubleshooting) |
-| [Issuer Directory](${env.ISSUER_URL}/.well-known/private-token-issuer-directory) | Issuer public keys and configuration |
+| [Issuer Directory](${
+	env.ISSUER_URL
+}/.well-known/private-token-issuer-directory) | Issuer public keys and configuration |
 
 ## Error Responses
 
