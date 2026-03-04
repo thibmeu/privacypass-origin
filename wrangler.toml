@@ -30,8 +30,8 @@ services = [
 [env.act.vars]
 ISSUER_URL = "https://act-issuer.research.cloudflare.com"
 ORIGIN_NAME = "act-origin.research.cloudflare.com"
-ACT_DOMAIN_SEPARATOR = "ACT-v1"
-ACT_L = "16"
+ACT_DOMAIN_SEPARATOR = "cloudflare:act-issuer:research:v1"
+ACT_L = "8"
 ACT_RETURN_CREDITS = "1"
 
 # Local development
@@ -41,6 +41,6 @@ name = "act-origin-dev"
 [env.dev.vars]
 ISSUER_URL = "http://localhost:8787"
 ORIGIN_NAME = "localhost:8788"
-ACT_DOMAIN_SEPARATOR = "act-issuer.research.cloudflare.com"
+ACT_DOMAIN_SEPARATOR = "cloudflare:act-issuer:dev:v1"
 ACT_L = "8"
 ACT_RETURN_CREDITS = "1"
