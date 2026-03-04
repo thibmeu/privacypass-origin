@@ -14,7 +14,22 @@ import originHTML from './origin-html.js';
 import tokenOKHTML from './origin-html-to-remove-token-ok.js';
 import actOriginHTML from './origin-html-act.js';
 import actTokenOKHTML from './origin-html-act-ok.js';
+import actHomeHTML from './origin-html-act-home.js';
+import actHomeMD from './origin-md-act-home.js';
 import { Bindings } from './bindings.js';
+
+/** Content type preference based on Accept header */
+type ContentFormat = 'html' | 'markdown';
+
+/** Parse Accept header and return preferred content format */
+function getContentFormat(request: Request): ContentFormat {
+	const accept = request.headers.get('Accept') ?? '';
+	// Simple prefix matching - check for markdown/plain before html
+	if (accept.includes('text/markdown') || accept.includes('text/plain')) {
+		return 'markdown';
+	}
+	return 'html';
+}
 
 const { ACTTokenChallenge, ACTToken, ACT_TOKEN_TYPE, Origin: ACTOrigin, ACT } = act;
 
@@ -227,9 +242,11 @@ async function handleACTLogin(request: Request, env: Bindings) {
 					}),
 				});
 				if (!verifyResponse.ok) {
-					return new Response('ACT spend proof verification failed (issuer error)', { status: 401 });
+					return new Response('ACT spend proof verification failed (issuer error)', {
+						status: 401,
+					});
 				}
-				const verifyJson = await verifyResponse.json() as { valid: boolean; refund?: number[] };
+				const verifyJson = (await verifyResponse.json()) as { valid: boolean; refund?: number[] };
 				verifyResult = {
 					valid: verifyJson.valid,
 					refund: verifyJson.refund ? new Uint8Array(verifyJson.refund) : undefined,
@@ -295,12 +312,70 @@ function uint8ToBase64(bytes: Uint8Array): string {
 }
 
 /**
+ * Handle homepage request with content negotiation
+ */
+function handleHomepage(request: Request, env: Bindings): Response {
+	const format = getContentFormat(request);
+
+	if (format === 'markdown') {
+		return new Response(actHomeMD(env), {
+			headers: {
+				'Content-Type': 'text/markdown; charset=utf-8',
+				'Cache-Control': 'public, max-age=3600',
+			},
+		});
+	}
+
+	return new Response(actHomeHTML(env), {
+		headers: {
+			'Content-Type': 'text/html; charset=utf-8',
+			'Cache-Control': 'public, max-age=3600',
+		},
+	});
+}
+
+/**
+ * Handle debug endpoint - returns request headers as JSON (excluding Authorization)
+ */
+function handleDebug(request: Request): Response {
+	const headers: Record<string, string> = {};
+	for (const [key, value] of request.headers.entries()) {
+		// Exclude Authorization header for security
+		if (key.toLowerCase() !== 'authorization') {
+			headers[key] = value;
+		}
+	}
+
+	const debugInfo = {
+		method: request.method,
+		url: request.url,
+		headers,
+	};
+
+	return new Response(JSON.stringify(debugInfo, null, 2), {
+		headers: {
+			'Content-Type': 'application/json; charset=utf-8',
+			'Cache-Control': 'no-store',
+		},
+	});
+}
+
+/**
  * Handle a request to the demo Privacy Pass redemption server.
  * @param {Request} request
  */
 async function handleRequest(request: Request, env: Bindings) {
-	// If the request is for the home page, return the basic interaction form.
 	const url = new URL(request.url);
+
+	// Homepage with content negotiation
+	if (url.pathname === '/' || url.pathname === '') {
+		return handleHomepage(request, env);
+	}
+
+	// Debug endpoint
+	if (url.pathname === '/debug') {
+		return handleDebug(request);
+	}
 
 	if (url.pathname.startsWith('/act-login')) {
 		return handleACTLogin(request, env);
