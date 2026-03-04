@@ -24,7 +24,7 @@ ORIGIN_NAME = "pp-origin.example.test"
 name = "act-origin"
 route = { pattern = "act-origin.research.cloudflare.com", custom_domain = true }
 services = [
-  { binding = "ACT_ISSUER", service = "act-issuer", environment = "act" }
+  { binding = "ACT_ISSUER", service = "act-issuer" }
 ]
 
 [env.act.vars]
