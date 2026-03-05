@@ -19,9 +19,10 @@ export default (params: ACTOKParams) => `<!DOCTYPE html>
 <head>
 <title>ACT Demo | Success</title>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: monospace; background: #1a1a2e; color: #0f0; padding: 2rem; }
-pre { font-size: 12px; line-height: 1.2; }
+body { font-family: monospace; background: #1a1a2e; color: #0f0; padding: 1rem; font-size: 14px; }
+pre { font-size: 12px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
 .banner { color: #0ff; }
 .success { color: #0f0; }
 .info { color: #fff; }

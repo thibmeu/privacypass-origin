@@ -5,9 +5,10 @@ export default (env: Bindings) => `<!DOCTYPE html>
 <head>
 <title>ACT Demo | Challenge</title>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 2rem; line-height: 1.6; }
-pre { white-space: pre-wrap; }
+body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 1rem; line-height: 1.6; font-size: 14px; }
+pre { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
 a { color: #6cf; }
 .status { color: #f66; }
 .header { color: #6f6; font-size: 1.2em; }

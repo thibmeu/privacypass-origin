@@ -27,6 +27,9 @@ services = [
   { binding = "ACT_ISSUER", service = "act-issuer", entrypoint = "IssuerHandler" }
 ]
 
+[env.act.observability]
+enabled = true
+
 [env.act.vars]
 ISSUER_URL = "https://act-issuer.research.cloudflare.com"
 ORIGIN_NAME = "act-origin.research.cloudflare.com"
